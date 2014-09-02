@@ -41,30 +41,6 @@ func sayHello(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("hello!"))
 }
 
-type weatherData struct {
-	Name string `json:"name"`
-	Main struct {
-		Kevlin float64 `json:"temp"`
-	} `json:"main"`
-}
-
-func query(city string) (weatherData, error) {
-	resp, err := http.Get("http://api.openweathermap.org/data/2.5/weather?q=" + city)
-	if err != nil {
-		return weatherData{}, err
-	}
-
-	defer resp.Body.Close()
-
-	var d weatherData
-
-	if err := json.NewDecoder(resp.Body).Decode(&d); err != nil {
-		return weatherData{}, err
-	}
-
-	return d, nil
-}
-
 type weatherProvider interface {
 	temperature(city string) (float64, error)
 }
@@ -117,21 +93,6 @@ func (w weatherUnderground) temperature(city string) (float64, error) {
 	kelvin := d.Observation.Celsius + 273.15
 	log.Printf("weatherUnderground: %s: %.2f", city, kelvin)
 	return kelvin, nil
-}
-
-func temperature(city string, providers ...weatherProvider) (float64, error) {
-	sum := 0.0
-
-	for _, provider := range providers {
-		k, err := provider.temperature(city)
-		if err != nil {
-			return 0, err
-		}
-
-		sum += k
-	}
-
-	return sum / float64(len(providers)), nil
 }
 
 type multiWeatherProvider []weatherProvider
